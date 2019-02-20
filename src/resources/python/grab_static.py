@@ -5,8 +5,9 @@ import time
 import os, sys
 import pickle
 import datetime as dt
+import constants
 from nba_api.stats.library import data
-from nba_api.stats.endpoints import commonallplayers, commonplayerinfo, teamdetails, teaminfocommon
+from nba_api.stats.endpoints import commonallplayers, commonplayerinfo, teamdetails, teaminfocommon, drafthistory
 
 class player_ids(object):
 
@@ -24,8 +25,9 @@ class player_ids(object):
 
         with open(os.path.join(self.path,"data/CommonAllPlayers/playerlist.pickle"),'wb') as f:
             pickle.dump(common_players,f)
-            
+
         sids = common_players['PERSON_ID'].loc[common_players['ROSTERSTATUS'] == 1]
+
         try:
             from json.decoder import JSONDecodeError
         except ImportError:
@@ -61,9 +63,6 @@ class player_ids(object):
         headers = commonallplayers.CommonAllPlayers(season=season).expected_data
 
         # for header in headers['CommonAllPlayers']:
-        #     self.ids[header] = ""
-
-
 
         #Combine for player_list_dim
         cols = players_info.columns.difference(common_players.columns)
@@ -147,50 +146,27 @@ class team_ids(object):
                 pickle.dump(dim_teamlist,f)
 
         return dim_teamlist
-#
 
-# team_ids().sync_teams('2017-18')
-player_ids().sync_players('2018-19')
+
+class draft_ids(object):
+
+    def __init__(self):
+        self.path = os.path.dirname(__file__)
+        self.seasons = constants.season.seasons
+        self.league_id = constants.league.NBA
+
+    def sync_draft(self):
+        dim_draftlist = drafthistory.DraftHistory(league_id=self.league_id).get_data_frames()
+        with open(os.path.join(self.path,"data/3_d_static_draft/dim_draftlist.pickle"),'wb') as f:
+            pickle.dump(dim_draftlist,f)
+
+        return dim_draftlist
+
+
+
 path = os.path.dirname(__file__)
 
-# common_players = commonallplayers.CommonAllPlayers(season='2018-19').common_all_players.get_data_frame()
-#
-# with open(os.path.join(path,"data/CommonAllPlayers/playerlist.pickle"),'wb') as f:
-#     pickle.dump(common_players,f)
-#
-# sids = common_players['PERSON_ID'].loc[common_players['ROSTERSTATUS'] == 1]
+with open(os.path.join(path,"data/2_d_static_teams/dim_teamlist.pickle"),'rb') as f:
+    team = pickle.load(f)
 
-
-print(sids)
-# print(player_ids().sync_players('2017-18'))
-
-# ids = pd.DataFrame(data.teams)
-# print(ids)
-#
-#
-#
-# with open(os.path.join(path,"data/CommonAllPlayers/playerlist.pickle"),'rb') as f:
-#     df1 = pickle.load(f)
-#
-# with open(os.path.join(path,"data/CommonPlayerInfo/playerlist.pickle"),'rb') as f:
-#     df2= pickle.load(f)
-# cols = df2.columns.difference(df1.columns)
-# idx = pd.Index(['PERSON_ID'])
-# cols = cols.append(idx)
-# print(df2[cols])
-# df = pd.merge(df1, df2[cols], on='PERSON_ID', how='outer')
-# df1.to_csv(os.path.join(path,"data/CommonAllPlayers/playerlist.csv"))
-# df2.to_csv(os.path.join(path,"data/CommonPlayerInfo/playerlist.csv"))
-# df.to_csv(os.path.join(path,"data/1_d_static_players/playerlist.csv"))
-# # print(df)
-#
-# team = teamdetails.TeamDetails(team_id=1610612737).team_background.get_data_frame()
-# print(team)
-#
-# with open(os.path.join(path,"data/CommonPlayerInfo/playerlist.pickle"),'rb') as f:
-#     playlist = pickle.load(f)
-#
-# ids = pd.DataFrame(data.players)
-# player = commonplayerinfo.CommonPlayerInfo(player_id=1032).common_player_info.get_data_frame()
-# print(playlist)
-# print(ids.loc[1532:,:])
+# team.to_csv(os.path.join(path,'data/2_d_static_teams/dim_teamlist.csv'))
